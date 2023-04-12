@@ -2586,7 +2586,6 @@ static void *gmic_parallel(void *arg) {
 }
 
 // Array of G'MIC built-in commands (must be sorted in lexicographic order!).
-// (does not contain the 1-letter commands).
 const char *gmic::builtin_commands_names[] = {
   "!=","%","&","*","*3d","+","+3d","-","-3d","/","/3d","<","<<","<=","=","==",">",">=",">>",
   "abs","acos","acosh","add","add3d","and","append","asin","asinh","atan","atan2","atanh","autocrop",
@@ -2617,7 +2616,17 @@ const char *gmic::builtin_commands_names[] = {
   "um","uncommand","unroll","unserialize",
   "vanvliet","verbose",
   "w0","w1","w2","w3","w4","w5","w6","w7","w8","w9","wait","warn","warp","watershed","while","window",
-  "xor","y","z","^","{","|","}" };
+  "xor",
+  0,
+
+  // One-letter commands.
+  "%","&","*","+","-","/","<","=",">",
+  "a","b","c","d","e","f","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
+  "y","z","^","{","|","}"
+
+  // Two-letters commands.
+
+};
 
 CImg<int> gmic::builtin_commands_inds = CImg<int>::empty();
 
@@ -4165,7 +4174,7 @@ gmic& gmic::_gmic(const char *const commands_line,
   cimg::mutex(22);
   if (!builtin_commands_inds) {
     builtin_commands_inds.assign(128,2,1,1,-1);
-    for (unsigned int i = 0; i<sizeof(builtin_commands_names)/sizeof(char*); ++i) {
+    for (unsigned int i = 0; builtin_commands_names[i]; ++i) {
       const int c = *builtin_commands_names[i];
       if (builtin_commands_inds[c]<0) builtin_commands_inds[c] = (int)i;
       builtin_commands_inds(c,1) = (int)i;
@@ -5489,22 +5498,22 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         (is_length1 && ((item0>='a' && item0<='z') || // Alphabetical shortcut commands
                         item0=='%' || item0=='&' || item0=='*' || item0=='+' || item0=='-' || item0=='/' ||
                         item0=='<' || item0=='=' || item0=='>' || item0=='^' || item0=='|')) ||
-        (is_length2 && ((item0=='!' && item1=='=') || // Shortcut '!='
-                        (item0=='=' && item1=='>') || // Shortcut '=>'
+        (is_length2 && ((item0=='!' && item1=='=') || // '!='
+                        (item0=='=' && item1=='>') || // '=>'
                         (item0=='d' && item1=='o') || // 'do'
                         (item0=='e' && item1=='q') || // 'eq'
-                        (item0=='f' && item1=='i') || // Shortcuts 'fi'
+                        (item0=='f' && item1=='i') || // 'fi'
                         (item0=='g' && (item1=='e' || item1=='t')) || // 'ge' and 'gt'
                         (item0=='i' && item1=='f') || // 'if'
                         (item0=='l' && (item1=='e' || item1=='t')) || // 'le' and 'lt'
-                        (item0=='m' && (item1=='*' || item1=='/')) || // Shortcuts 'm*' and 'm/'
-                        (item0=='n' && item1=='m') || // Shortcut 'nm'
+                        (item0=='m' && (item1=='*' || item1=='/')) || // 'm*' and 'm/'
+                        (item0=='n' && item1=='m') || // 'nm'
                         (item0=='o' && item1=='r') || // 'or'
-                        (item0=='r' && (item1=='m' || item1=='v')) || // Shortcut 'rm' and 'rv'
-                        (item0=='s' && item1=='h') || // Shortcut 'sh'
-                        (item0=='u' && item1=='m') || // Shortcut 'um'
-                        (item0=='w' && item1>='0' && item1<='9') || // Shortcuts 'w0'..'w9'
-                        ((item1==item0 || item1=='=') && // Shortcuts '<','=','>','<=','==' and '>='
+                        (item0=='r' && (item1=='m' || item1=='v')) || // 'rm' and 'rv'
+                        (item0=='s' && item1=='h') || // 'sh'
+                        (item0=='u' && item1=='m') || // 'um'
+                        (item0=='w' && item1>='0' && item1<='9') || // 'w0'..'w9'
+                        ((item1==item0 || item1=='=') && // '<','=','>','<=','==' and '>='
                          (item0=='<' || item0=='=' || item0=='>')))) ||
         (is_length3 && item1=='3' && item2=='d' && // '*3d','+3d','-3d' and '/3d'
          (item0=='*' || item0=='+' || item0=='-' || item0=='/' || item0=='j' || item0=='l')),
@@ -15334,8 +15343,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   // Look for a built-in command.
                   for (unsigned int l = 0; l<sizeof(builtin_commands_names)/sizeof(char*); ++l) {
                     const char *const c = builtin_commands_names[l];
-                    const int d = levenshtein(c,name.data() + foff);
-                    if (d<dmin) { dmin = d; misspelled = builtin_commands_names[l]; }
+                    if (c) {
+                      const int d = levenshtein(c,name.data() + foff);
+                      if (d<dmin) { dmin = d; misspelled = builtin_commands_names[l]; }
+                    }
                   }
                   // Look for a custom command.
                   for (unsigned int i = 0; i<gmic_comslots; ++i)
