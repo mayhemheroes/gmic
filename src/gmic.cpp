@@ -2620,15 +2620,34 @@ const char *gmic::builtin_commands_names[] = {
   "xor",
   0,
 
-  // One-letter commands.
+  // Commands of length 3.
+  "*3d","+3d","-3d","/3d",
+  "abs","add","and",
+  "bsl","bsr",
+  "cos",
+  "cut",
+  "div",
+  "erf","exp",
+  "fft","for",
+  "j3d",
+  "l3d","log",
+  "map","max","min","mod","mul",
+  "neq","nmd",
+  "pow",
+  "r3d","rol","ror",
+  "set","sin","sqr","sub","svd",
+  "tan","tanh",
+  "xor",
+
+  // Commands of length 2.
+  "!=","<<","<=","==","=>",">=",">>",
+  "do","eq","fi","ge","gt","if","le","lt","m*","m/","mv","nm","or","rm","rv","sh","um",
+  "w0","w1","w2","w3","w4","w5","w6","w7","w8","w9",
+
+  // Commands of length 1.
   "%","&","*","+","-","/","<","=",">",
   "a","b","c","d","e","f","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
   "y","z","^","{","|","}"
-
-  // Two-letters commands.
-  "!=","<<","<=","==","=>",">=",">>",
-  "do","eq","fi","ge","gt","if","le","lt","m*","m/","mv","nm","or","rm","rv","sh","um",
-  "w0","w1","w2","w3","w4","w5","w6","w7","w8","w9"
 
 };
 
