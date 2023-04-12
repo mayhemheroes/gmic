@@ -396,9 +396,10 @@ struct gmic {
                            const unsigned int *const variables_sizes=0);
 
   gmic& add_commands(const char *const data_commands, const char *const commands_file=0,
-                     const bool add_debug_info=false, unsigned int *count_new=0,
-                     unsigned int *count_replaced=0, bool *const is_entrypoint=0);
-  gmic& add_commands(std::FILE *const file, const char *const filename=0, const bool add_debug_info=false,
+                     const bool add_debug_info=false, const bool allow_main=false,
+                     unsigned int *count_new=0, unsigned int *count_replaced=0, bool *const is_entrypoint=0);
+  gmic& add_commands(std::FILE *const file, const char *const filename=0,
+                     const bool add_debug_info=false, const bool allow_main=false,
                      unsigned int *count_new=0, unsigned int *count_replaced=0, bool *const is_entrypoint=0);
 
   gmic_image<char> callstack2string(const bool _is_debug=false) const;
