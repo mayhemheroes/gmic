@@ -6538,8 +6538,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
 
           std::FILE *file = 0;
-          const char *const p_column = std::strchr(arg_command,':');
-          if (!p_column || p_column - arg_command<2) file = cimg::std_fopen(arg_command,"rb");
+          const char *const p_colon = std::strchr(arg_command,':');
+#if cimg_OS!=2
+          if (!p_colon || p_colon - arg_command>256)
+            file = cimg::std_fopen(arg_command,"rb");
+#else
+          if (!p_colon || p_colon - arg_command==1 || p_colon - arg_command>256)
+            file = cimg::std_fopen(arg_command,"rb"); // Allow 'C:\\filename'
+#endif
           if (file) {
             if (!is_debug_arg) add_debug_info = true;
             print(images,0,"Import commands from file '%s'%s",
