@@ -3510,10 +3510,9 @@ const char *gmic::set_variable(const char *const name, const CImg<unsigned char>
 
 // Add custom commands from a char* buffer.
 //------------------------------------------
-gmic& gmic::add_commands(const char *const data_commands, const char *const commands_file,
-                         const bool add_debug_info, const bool allow_main,
+gmic& gmic::add_commands(const char *const data_commands, const char *const commands_file, const bool add_debug_info,
                          unsigned int *count_new, unsigned int *count_replaced,
-                         bool *const is_entrypoint) {
+                         bool *const is_main_) {
   if (!data_commands || !*data_commands) return *this;
   cimg::mutex(23);
   CImg<char> s_body(256*1024), s_line(256*1024), s_name(257), debug_info(32);
@@ -3536,7 +3535,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
   }
   if (count_new) *count_new = 0;
   if (count_replaced) *count_replaced = 0;
-  if (is_entrypoint) *is_entrypoint = false;
+  if (is_main_) *is_main_ = false;
   line_number = 1;
 
   for (const char *data = data_commands; *data; is_last_slash = _is_last_slash,
@@ -3582,7 +3581,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
       CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:_s_body);
 
       if (hash<0 && !*s_name) {
-        if (!allow_main) {
+        if (!allow_main_) {
           CImg<char> e_data_commands(65);
           cimg::strellipsize(data_commands,e_data_commands,64,true);
           error(true,"Command 'command': Items defined outside command scope, in string '%s'",
@@ -3590,7 +3589,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
         }
         std::strcpy(s_name,"_main_");
       }
-      if (is_entrypoint && !std::strcmp(s_name,"_main_")) *is_entrypoint = true;
+      if (is_main_ && !std::strcmp(s_name,"_main_")) *is_main_ = true;
       hash = (int)hashcode(s_name,false);
 
       if (add_debug_info) { // Insert debug info code in body
@@ -3650,10 +3649,9 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
 
 // Add commands from a file.
 //---------------------------
-gmic& gmic::add_commands(std::FILE *const file, const char *const commands_file,
-                         const bool add_debug_info, const bool allow_main,
+gmic& gmic::add_commands(std::FILE *const file, const char *const commands_file, const bool add_debug_info,
                          unsigned int *count_new, unsigned int *count_replaced,
-                         bool *const is_entrypoint) {
+                         bool *const is_main_) {
   if (!file) return *this;
 
   // Try reading it first as a .cimg file.
@@ -3661,7 +3659,7 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const commands_file,
     CImg<char> buffer;
     buffer.load_cimg(file).unroll('x');
     buffer.resize(buffer.width() + 1,1,1,1,0);
-    add_commands(buffer.data(),commands_file,add_debug_info,allow_main,count_new,count_replaced,is_entrypoint);
+    add_commands(buffer.data(),commands_file,add_debug_info,count_new,count_replaced,is_main_);
   } catch (...) { // If failed, read as a text file
     std::rewind(file);
     std::fseek(file,0,SEEK_END);
@@ -3671,7 +3669,7 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const commands_file,
       CImg<char> buffer((unsigned int)siz + 1);
       if (std::fread(buffer.data(),sizeof(char),siz,file)) {
         buffer[siz] = 0;
-        add_commands(buffer.data(),commands_file,add_debug_info,allow_main,count_new,count_replaced,is_entrypoint);
+        add_commands(buffer.data(),commands_file,add_debug_info,count_new,count_replaced,is_main_);
       }
     }
   }
@@ -4250,7 +4248,7 @@ gmic& gmic::_gmic(const char *const commands_line,
   verbosity = 0;
   network_timeout = 0;
 
-  allow_entrypoint = false;
+  allow_main_ = false;
   is_change = false;
   is_debug = false;
   is_running = false;
@@ -5403,7 +5401,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     boundary = 0, pattern = 0, exit_on_anykey = 0, wind = 0, interpolation = 0, hash = 0;
   char end, sep = 0, sep0 = 0, sep1 = 0, sepx = 0, sepy = 0, sepz = 0, sepc = 0, axis = 0;
   double vmin = 0, vmax = 0, value, value0, value1, nvalue, nvalue0, nvalue1;
-  bool is_cond, _is_get = false, is_end_local = false, check_elif = false, run_entrypoint = false;
+  bool is_cond, _is_get = false, is_end_local = false, check_elif = false, run_main_ = false;
   float opacity = 0;
   int err;
 
@@ -5459,7 +5457,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       // Substitute expressions in current item.
       const char
-        *const initial_item = run_entrypoint?"_main_":commands_line[position].data(),
+        *const initial_item = run_main_?"_main_":commands_line[position].data(),
         *const empty_argument = "",
         *initial_argument = empty_argument;
 
@@ -6597,7 +6595,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             print(images,0,"Import commands from file '%s'%s",
                   arg_command_text,
                   add_debug_info?", with debug info":"");
-            add_commands(file,arg_command,add_debug_info,false,&count_new,&count_replaced);
+            add_commands(file,arg_command,add_debug_info,&count_new,&count_replaced);
             cimg::fclose(file);
 
           } else if (!cimg::strncasecmp(arg_command,"http://",7) ||
@@ -6618,7 +6616,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               verbosity = 0;
               is_debug = false;
               try {
-                add_commands(file,arg_command,add_debug_info,false,&count_new,&count_replaced);
+                add_commands(file,arg_command,add_debug_info,&count_new,&count_replaced);
                 cimg::fclose(file);
               } catch (...) {
                 cimg::fclose(file);
@@ -6640,7 +6638,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   arg_command_text,
                   add_debug_info?", with debug info":"");
             cimg::strunescape(arg_command);
-            add_commands(arg_command,0,add_debug_info,false,&count_new,&count_replaced);
+            add_commands(arg_command,0,add_debug_info,&count_new,&count_replaced);
           }
           if (is_verbose) {
             unsigned int count_total = 0;
@@ -14196,7 +14194,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg::swap(exception._command,e._command);
                 cimg::swap(exception._message,e._message);
               }
-              if (run_entrypoint) { --verbosity; run_entrypoint = false; }
+              if (run_main_) { --verbosity; run_main_ = false; }
 
               const unsigned int nb = std::min((unsigned int)selection.height(),g_list.size());
               if (nb>0) {
@@ -15241,7 +15239,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   "invalid file options '%s'.",
                   filename0,options.data());
 
-        } else if ((allow_entrypoint && !*uext) || !std::strcmp(uext,"gmic")) {
+        } else if ((allow_main_ && !*uext) || !std::strcmp(uext,"gmic")) {
 
           // G'MIC command file.
           const bool add_debug_info = (*options!='0');
@@ -15250,17 +15248,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           unsigned int count_new = 0, count_replaced = 0;
           std::FILE *const gfile = cimg::fopen(filename,"rb");
 
-          bool is_entrypoint = false, is_add_error = false;
+          bool is_main_ = false, is_add_error = false;
           status.move_to(o_status); // Save status because 'add_commands' can change it, with error()
           int o_verbosity = verbosity;
           const bool o_is_debug = is_debug;
           verbosity = 0;
           is_debug = false;
           try {
-            add_commands(gfile,filename,o_is_debug,false,&count_new,&count_replaced,
-                         allow_entrypoint && callstack.size()==1 && !is_command_input?&is_entrypoint:0);
+            add_commands(gfile,filename,o_is_debug,&count_new,&count_replaced,
+                         allow_main_ && callstack.size()==1 && !is_command_input?&is_main_:0);
           } catch (...) {
-            is_add_error = true; is_entrypoint = false;
+            is_add_error = true; is_main_ = false;
           }
           is_debug = o_is_debug;
           verbosity = o_verbosity;
@@ -15292,10 +15290,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             std::fflush(cimg::output());
             cimg::mutex(29,0);
           }
-          if (is_entrypoint) { // Tell parser to run '_main_' in next iteration
+          if (is_main_) { // Tell parser to run '_main_' in next iteration
             verbosity++;
             --position;
-            run_entrypoint = true;
+            run_main_ = true;
           }
           continue;
 

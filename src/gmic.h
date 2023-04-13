@@ -395,12 +395,10 @@ struct gmic {
   const char *set_variable(const char *const name, const gmic_image<unsigned char>& value,
                            const unsigned int *const variables_sizes=0);
 
-  gmic& add_commands(const char *const data_commands, const char *const commands_file=0,
-                     const bool add_debug_info=false, const bool allow_main=false,
-                     unsigned int *count_new=0, unsigned int *count_replaced=0, bool *const is_entrypoint=0);
-  gmic& add_commands(std::FILE *const file, const char *const filename=0,
-                     const bool add_debug_info=false, const bool allow_main=false,
-                     unsigned int *count_new=0, unsigned int *count_replaced=0, bool *const is_entrypoint=0);
+  gmic& add_commands(const char *const data_commands, const char *const commands_file=0, const bool add_debug_info=false,
+                     unsigned int *count_new=0, unsigned int *count_replaced=0, bool *const is_main_=0);
+  gmic& add_commands(std::FILE *const file, const char *const filename=0, const bool add_debug_info=false,
+                     unsigned int *count_new=0, unsigned int *count_replaced=0, bool *const is_main_=0);
 
   gmic_image<char> callstack2string(const bool _is_debug=false) const;
   gmic_image<char> callstack2string(const gmic_image<unsigned int>& callstack_selection,
@@ -507,7 +505,7 @@ struct gmic {
   unsigned int nb_dowhiles, nb_fordones, nb_foreachdones, nb_repeatdones, nb_carriages_default, nb_carriages_stdout,
     debug_filename, debug_line, cimg_exception_mode;
   int verbosity, network_timeout;
-  bool allow_entrypoint, is_change, is_debug, is_running, is_start, is_return, is_quit, is_debug_info,
+  bool allow_main_, is_change, is_debug, is_running, is_start, is_return, is_quit, is_debug_info,
     _is_abort, *is_abort, is_abort_thread, is_lbrace_command;
   const char *starting_commands_line;
 };
