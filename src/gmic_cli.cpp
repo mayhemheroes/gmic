@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
   static bool is_abort;
   gmic gmic_instance((char*)0,(char*)0,true,(float*)0,&is_abort,(gmic_pixel_type)0);
   gmic_instance.set_variable("_host",0,"cli");
-  gmic_instance.add_commands("cli_start :");
+  gmic_instance.add_commands("cli_start:");
 
   // Load startup command files.
   CImg<char> commands_user, commands_update, filename_update;
