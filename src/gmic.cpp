@@ -3511,8 +3511,7 @@ const char *gmic::set_variable(const char *const name, const CImg<unsigned char>
 // Add custom commands from a char* buffer.
 //------------------------------------------
 gmic& gmic::add_commands(const char *const data_commands, const char *const commands_file, const bool add_debug_info,
-                         unsigned int *count_new, unsigned int *count_replaced,
-                         bool *const is_main_) {
+                         unsigned int *count_new, unsigned int *count_replaced, bool *const is_main_) {
   if (!data_commands || !*data_commands) return *this;
   cimg::mutex(23);
   CImg<char> s_body(256*1024), s_line(256*1024), s_name(257), debug_info(32);
@@ -3579,16 +3578,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
       const char *_s_body = s_body;
       if (sep==':') while (*_s_body && cimg::is_blank(*_s_body)) ++_s_body;
       CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:_s_body);
-
-      if (hash<0 && !*s_name) {
-        if (!allow_main_) {
-          CImg<char> e_data_commands(65);
-          cimg::strellipsize(data_commands,e_data_commands,64,true);
-          error(true,"Command 'command': Items defined outside command scope, in string '%s'",
-                e_data_commands.data());
-        }
-        std::strcpy(s_name,"_main_");
-      }
+      if (hash<0 && !*s_name) std::strcpy(s_name,"_main_");
       if (is_main_ && !std::strcmp(s_name,"_main_")) *is_main_ = true;
       hash = (int)hashcode(s_name,false);
 
@@ -3650,8 +3640,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
 // Add commands from a file.
 //---------------------------
 gmic& gmic::add_commands(std::FILE *const file, const char *const commands_file, const bool add_debug_info,
-                         unsigned int *count_new, unsigned int *count_replaced,
-                         bool *const is_main_) {
+                         unsigned int *count_new, unsigned int *count_replaced, bool *const is_main_) {
   if (!file) return *this;
 
   // Try reading it first as a .cimg file.
